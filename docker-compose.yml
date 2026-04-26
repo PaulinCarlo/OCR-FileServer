@@ -1,0 +1,110 @@
+version: "3.9"
+
+services:
+  # SQL Server Express
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ocr-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "OcrStr0ng!Pass"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'OcrStr0ng!Pass' -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: ocr-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+  # Grafana - Monitoring dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ocr-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - ocr-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # OCR API
+  ocr-api:
+    build:
+      context: .
+      dockerfile: src/OCR-Api/Dockerfile
+    container_name: ocr-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:5000"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=OcrDb;User Id=SA;Password=OcrStr0ng!Pass;TrustServerCertificate=True;"
+    ports:
+      - "5000:5000"
+    networks:
+      - ocr-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # OCR UI
+  ocr-ui:
+    build:
+      context: .
+      dockerfile: src/OCR-UI/Dockerfile
+    container_name: ocr-ui
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:5002"
+    ports:
+      - "5002:5002"
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+  # Nginx - Reverse proxy / load balancer
+  nginx:
+    image: nginx:latest
+    container_name: ocr-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - ocr-network
+    depends_on:
+      - ocr-api
+      - ocr-ui
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+  grafana_data:
+
+networks:
+  ocr-network:
+    driver: bridge

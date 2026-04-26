@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - OCR File Server</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
+        .upload-form { margin: 20px 0; }
+        .upload-form input[type=file] { margin-bottom: 10px; }
+        .upload-form button { padding: 8px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Upload Document</h1>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload</a>
+        <a href="/documents">Documents</a>
+    </nav>
+    <hr/>
+    <div class="upload-form">
+        <form action="/api/document/upload" method="post" enctype="multipart/form-data">
+            <label for="file">Select PDF file:</label><br/>
+            <input type="file" id="file" name="file" accept=".pdf" /><br/>
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+</body>
+</html>

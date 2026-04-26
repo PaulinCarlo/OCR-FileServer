@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OCR-Api/OCR-Api.csproj" />
+    <Project Path="src/OCR-Core/OCR-Core.csproj" />
+    <Project Path="src/OCR-UI/OCR-UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OCR-Tests/OCR-Tests.csproj" />
+  </Folder>
+</Solution>
